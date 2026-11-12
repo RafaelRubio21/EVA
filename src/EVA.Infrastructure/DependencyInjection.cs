@@ -30,9 +30,10 @@ public static class DependencyInjection
 
         services.AddScoped<IEmailRepository, EmailRepository>();
 
-        // Configurações tipadas de IA (Gemini) e E-mail (IMAP MailKit)
+        // Configurações tipadas de IA (Gemini) e E-mail (IMAP MailKit / Gmail OAuth)
         services.Configure<GeminiAiOptions>(configuration.GetSection(GeminiAiOptions.SectionName));
         services.Configure<ImapEmailOptions>(configuration.GetSection(ImapEmailOptions.SectionName));
+        services.Configure<GmailOAuthOptions>(configuration.GetSection(GmailOAuthOptions.SectionName));
 
         // Mocks disponíveis como fallback automático quando credenciais externas não estiverem configuradas
         services.AddScoped<MockAiAnalyzer>();
@@ -40,7 +41,8 @@ public static class DependencyInjection
 
         // Provedores reais com fallback transparente
         services.AddHttpClient<IAiAnalyzer, GeminiAiAnalyzer>();
-        services.AddScoped<IEmailProvider, ImapEmailProvider>();
+        services.AddScoped<ImapEmailProvider>();
+        services.AddScoped<IEmailProvider, GmailOAuthEmailProvider>();
 
         // Workers em segundo plano (Triagem e Monitoramento de Lembretes)
         services.AddHostedService<EmailIngestionBackgroundService>();
