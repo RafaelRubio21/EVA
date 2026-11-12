@@ -77,6 +77,22 @@ public sealed class EmailAnalysis : Entity
         NextReminderAt = null;
     }
 
+    public void RegisterReminderSent(DateTimeOffset notifiedAt)
+    {
+        if (!RequiresResponse)
+            return;
+
+        var snoozeInterval = PriorityLevel switch
+        {
+            PriorityLevel.Critical => TimeSpan.FromMinutes(15),
+            PriorityLevel.High => TimeSpan.FromHours(1),
+            PriorityLevel.Normal => TimeSpan.FromHours(4),
+            _ => TimeSpan.FromHours(12)
+        };
+
+        NextReminderAt = notifiedAt.Add(snoozeInterval);
+    }
+
     private static DateTimeOffset CalculateDefaultReminder(
         PriorityLevel priority,
         DateTimeOffset? deadline)

@@ -1,5 +1,6 @@
 using EVA.Application.Common.Interfaces;
 using EVA.Domain.Entities;
+using EVA.Domain.Enums;
 using EVA.Domain.Exceptions;
 using EVA.Domain.Repositories;
 using MediatR;
@@ -11,6 +12,7 @@ public sealed class ProcessNewEmailCommandHandler(
     IEmailRepository emailRepository,
     IAiAnalyzer aiAnalyzer,
     IEmailProvider emailProvider,
+    IReminderNotifier reminderNotifier,
     ILogger<ProcessNewEmailCommandHandler> logger)
     : IRequestHandler<ProcessNewEmailCommand, ProcessNewEmailResult>
 {
@@ -60,6 +62,22 @@ public sealed class ProcessNewEmailCommandHandler(
         await emailRepository.AddAsync(emailRecord, cancellationToken);
         await emailRepository.SaveChangesAsync(cancellationToken);
         await emailProvider.MarkAsReadAsync(emailRecord.MessageId, cancellationToken);
+
+        // 6. Dispara notificação em tempo real caso seja um e-mail urgente/alta prioridade que exige resposta
+        if (analysis.RequiresResponse && analysis.PriorityLevel >= PriorityLevel.High)
+        {
+            await reminderNotifier.NotifyCriticalEmailArrivedAsync(
+                new ReminderNotificationPayload(
+                    emailRecord.Id,
+                    emailRecord.MessageId,
+                    emailRecord.Sender,
+                    emailRecord.Subject,
+                    analysis.PriorityLevel,
+                    analysis.Summary,
+                    analysis.Deadline,
+                    analysis.NextReminderAt),
+                cancellationToken);
+        }
 
         return new ProcessNewEmailResult(
             emailRecord.Id,

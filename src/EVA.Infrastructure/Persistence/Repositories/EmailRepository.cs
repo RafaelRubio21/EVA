@@ -49,7 +49,6 @@ public sealed class EmailRepository(EvaDbContext dbContext) : IEmailRepository
         CancellationToken cancellationToken = default)
     {
         return await dbContext.EmailRecords
-            .AsNoTracking()
             .Include(e => e.Analysis)
             .Where(e =>
                 e.IsProcessed &&

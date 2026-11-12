@@ -80,4 +80,12 @@ public sealed class EmailRecord : Entity
 
         Analysis.RescheduleReminder(newReminderAt);
     }
+
+    public void RegisterReminderSent(DateTimeOffset notifiedAt)
+    {
+        if (!IsProcessed || Analysis is null)
+            throw new DomainException("Não é possível registrar envio de lembrete para um e-mail não processado.");
+
+        Analysis.RegisterReminderSent(notifiedAt);
+    }
 }

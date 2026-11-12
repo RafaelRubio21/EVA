@@ -3,6 +3,8 @@ using EVA.Domain.Repositories;
 using EVA.Infrastructure.BackgroundJobs;
 using EVA.Infrastructure.Persistence;
 using EVA.Infrastructure.Persistence.Repositories;
+using EVA.Infrastructure.Services.Ai;
+using EVA.Infrastructure.Services.Email;
 using EVA.Infrastructure.Services.Mocks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -28,9 +30,17 @@ public static class DependencyInjection
 
         services.AddScoped<IEmailRepository, EmailRepository>();
 
-        // Mocks para os provedores externos nesta etapa inicial
-        services.AddScoped<IAiAnalyzer, MockAiAnalyzer>();
-        services.AddScoped<IEmailProvider, MockEmailProvider>();
+        // Configurações tipadas de IA (Gemini) e E-mail (IMAP MailKit)
+        services.Configure<GeminiAiOptions>(configuration.GetSection(GeminiAiOptions.SectionName));
+        services.Configure<ImapEmailOptions>(configuration.GetSection(ImapEmailOptions.SectionName));
+
+        // Mocks disponíveis como fallback automático quando credenciais externas não estiverem configuradas
+        services.AddScoped<MockAiAnalyzer>();
+        services.AddScoped<MockEmailProvider>();
+
+        // Provedores reais com fallback transparente
+        services.AddHttpClient<IAiAnalyzer, GeminiAiAnalyzer>();
+        services.AddScoped<IEmailProvider, ImapEmailProvider>();
 
         // Workers em segundo plano (Triagem e Monitoramento de Lembretes)
         services.AddHostedService<EmailIngestionBackgroundService>();

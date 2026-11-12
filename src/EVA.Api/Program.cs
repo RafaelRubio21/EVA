@@ -1,4 +1,7 @@
+using EVA.Api.Hubs;
+using EVA.Api.Services;
 using EVA.Application;
+using EVA.Application.Common.Interfaces;
 using EVA.Domain.Exceptions;
 using EVA.Infrastructure;
 using FluentValidation;
@@ -10,6 +13,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Camadas da Clean Architecture
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// SignalR e Notificador em Tempo Real para Clientes Desktop e Mobile
+builder.Services.AddSignalR();
+builder.Services.AddScoped<IReminderNotifier, SignalRReminderNotifier>();
 
 // Configuração da Web API
 builder.Services.AddControllers();
@@ -69,5 +76,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<EvaNotificationsHub>("/hubs/eva-notifications");
 
 app.Run();

@@ -1,3 +1,4 @@
+using EVA.Application.Common.Interfaces;
 using EVA.Domain.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -39,18 +40,40 @@ public sealed class ReminderNotificationBackgroundService(
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         var emailRepository = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
+        var reminderNotifier = scope.ServiceProvider.GetRequiredService<IReminderNotifier>();
 
         var now = DateTimeOffset.UtcNow;
         var dueEmails = await emailRepository.GetDueRemindersAsync(now, cancellationToken);
 
+        if (dueEmails.Count == 0)
+            return;
+
         foreach (var email in dueEmails)
         {
+            if (email.Analysis is null)
+                continue;
+
+            email.RegisterReminderSent(now);
+
+            var payload = new ReminderNotificationPayload(
+                email.Id,
+                email.MessageId,
+                email.Sender,
+                email.Subject,
+                email.Analysis.PriorityLevel,
+                email.Analysis.Summary,
+                email.Analysis.Deadline,
+                email.Analysis.NextReminderAt);
+
+            await reminderNotifier.NotifyDueReminderAsync(payload, cancellationToken);
+
             logger.LogWarning(
-                "[ALERTA EVA] Lembrete de resposta pendente! E-mail '{Subject}' de '{Sender}' (Prioridade: {Priority}, Prazo: {Deadline:O}).",
+                "[ALERTA EVA] Lembrete emitido para '{Subject}' ({Sender}). Próximo lembrete reagendado (snooze) para {NextReminderAt:O}.",
                 email.Subject,
                 email.Sender,
-                email.Analysis?.PriorityLevel,
-                email.Analysis?.Deadline);
+                email.Analysis.NextReminderAt);
         }
+
+        await emailRepository.SaveChangesAsync(cancellationToken);
     }
 }

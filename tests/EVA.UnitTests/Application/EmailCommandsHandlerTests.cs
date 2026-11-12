@@ -12,15 +12,17 @@ namespace EVA.UnitTests.Application;
 public sealed class EmailCommandsHandlerTests
 {
     [Fact]
-    public async Task ProcessNewEmail_WhenNewMessage_ShouldAnalyzeAndPersist()
+    public async Task ProcessNewEmail_WhenNewMessage_ShouldAnalyzePersistAndNotifyCritical()
     {
         var repository = new InMemoryEmailRepository();
         var aiAnalyzer = new StubAiAnalyzer();
         var emailProvider = new StubEmailProvider();
+        var reminderNotifier = new StubReminderNotifier();
         var handler = new ProcessNewEmailCommandHandler(
             repository,
             aiAnalyzer,
             emailProvider,
+            reminderNotifier,
             NullLogger<ProcessNewEmailCommandHandler>.Instance);
 
         var command = new ProcessNewEmailCommand(
@@ -36,6 +38,8 @@ public sealed class EmailCommandsHandlerTests
         Assert.Equal(PriorityLevel.Critical, result.PriorityLevel);
         Assert.True(result.RequiresResponse);
         Assert.Contains("MSG-100", emailProvider.MarkedAsReadIds);
+        Assert.Single(reminderNotifier.CriticalAlerts);
+        Assert.Equal("MSG-100", reminderNotifier.CriticalAlerts[0].MessageId);
     }
 
     [Fact]
@@ -46,6 +50,7 @@ public sealed class EmailCommandsHandlerTests
             repository,
             new StubAiAnalyzer(),
             new StubEmailProvider(),
+            new StubReminderNotifier(),
             NullLogger<ProcessNewEmailCommandHandler>.Instance);
 
         var command = new ProcessNewEmailCommand(
@@ -69,6 +74,7 @@ public sealed class EmailCommandsHandlerTests
             repository,
             new StubAiAnalyzer(),
             new StubEmailProvider(),
+            new StubReminderNotifier(),
             NullLogger<ProcessNewEmailCommandHandler>.Instance);
 
         var created = await processHandler.Handle(
@@ -142,6 +148,28 @@ public sealed class EmailCommandsHandlerTests
         public Task MarkAsReadAsync(string messageId, CancellationToken cancellationToken = default)
         {
             MarkedAsReadIds.Add(messageId);
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class StubReminderNotifier : IReminderNotifier
+    {
+        public List<ReminderNotificationPayload> DueReminders { get; } = [];
+        public List<ReminderNotificationPayload> CriticalAlerts { get; } = [];
+
+        public Task NotifyDueReminderAsync(
+            ReminderNotificationPayload payload,
+            CancellationToken cancellationToken = default)
+        {
+            DueReminders.Add(payload);
+            return Task.CompletedTask;
+        }
+
+        public Task NotifyCriticalEmailArrivedAsync(
+            ReminderNotificationPayload payload,
+            CancellationToken cancellationToken = default)
+        {
+            CriticalAlerts.Add(payload);
             return Task.CompletedTask;
         }
     }

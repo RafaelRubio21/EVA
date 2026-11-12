@@ -11,6 +11,8 @@ Sistema de secretária virtual inteligente em **.NET 10 (ASP.NET Core Web API)**
 * **Rich Domain Model** — Entidades ricas (`EmailRecord` e `EmailAnalysis`) com invariantes encapsuladas
 * **CQRS + MediatR** — Segregação de Commands e Queries com `IPipelineBehavior` para **Logging** e **Validação (FluentValidation)**
 * **Entity Framework Core 10 + SQL Server** — Mapeamentos via Fluent API (`IEntityTypeConfiguration<T>`) e Migrations
+* **Integrações Reais com Fallback Transparente** — **Google Gemini API** (`GeminiAiAnalyzer` com Structured Outputs JSON Schema) e **IMAP MailKit** (`ImapEmailProvider`), com fallback automático para Mocks quando sem credenciais configuradas
+* **Notificações em Tempo Real (SignalR)** — Hub tipado (`/hubs/eva-notifications`) para alertar clientes Desktop/Mobile sobre novos e-mails críticos e lembretes vencidos (com auto-snooze inteligente no domínio)
 * **Background Services (`PeriodicTimer`)** — Workers assíncronos para ingestão contínua de e-mails não lidos e monitoramento de lembretes vencidos
 * **Testes Unitários (xUnit)** — Cobertura das regras de domínio e handlers CQRS
 

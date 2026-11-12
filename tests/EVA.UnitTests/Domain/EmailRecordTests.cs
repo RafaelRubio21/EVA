@@ -93,4 +93,22 @@ public sealed class EmailRecordTests
         Assert.Throws<DomainException>(() =>
             record.RescheduleReminder(deadline.AddHours(1)));
     }
+
+    [Fact]
+    public void RegisterReminderSent_ShouldAdvanceNextReminderByPrioritySnoozeInterval()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var record = EmailRecord.Create("MSG-005", "a@b.com", "Assunto", "Corpo", now);
+        var analysis = EmailAnalysis.Create(
+            record.Id,
+            PriorityLevel.Critical,
+            requiresResponse: true,
+            summary: "Crítico",
+            nextReminderAt: now.AddMinutes(5));
+        record.AttachAnalysis(analysis);
+
+        record.RegisterReminderSent(now);
+
+        Assert.Equal(now.AddMinutes(15), record.Analysis!.NextReminderAt);
+    }
 }
