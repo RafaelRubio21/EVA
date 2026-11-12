@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/EVA.Api/EVA.Api.csproj" />
+    <Project Path="src/EVA.Application/EVA.Application.csproj" />
+    <Project Path="src/EVA.Domain/EVA.Domain.csproj" />
+    <Project Path="src/EVA.Infrastructure/EVA.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/EVA.UnitTests/EVA.UnitTests.csproj" />
+  </Folder>
+</Solution>
