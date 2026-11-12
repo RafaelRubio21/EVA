@@ -5,6 +5,7 @@ namespace EVA.Application.Emails.Commands.ProcessNewEmail;
 
 public sealed record ProcessNewEmailCommand(
     string MessageId,
+    string AccountEmail,
     string Sender,
     string Subject,
     string Body,

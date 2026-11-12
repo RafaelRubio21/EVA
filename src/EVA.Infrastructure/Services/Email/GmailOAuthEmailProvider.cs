@@ -66,6 +66,9 @@ public sealed class GmailOAuthEmailProvider(
         try
         {
             var config = options.Value;
+            var userProfile = await service.Users.GetProfile("me").ExecuteAsync(cancellationToken);
+            var accountEmail = userProfile.EmailAddress ?? config.UserEmail;
+
             var listRequest = service.Users.Messages.List("me");
             listRequest.Q = "is:unread";
             listRequest.MaxResults = config.MaxBatchSize;
@@ -97,6 +100,7 @@ public sealed class GmailOAuthEmailProvider(
 
                 messages.Add(new RawEmailMessage(
                     finalMessageId,
+                    accountEmail,
                     sender,
                     subject,
                     body,

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace EVA.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialCreateWithAccountEmail : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -17,6 +17,7 @@ namespace EVA.Infrastructure.Persistence.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     MessageId = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
+                    AccountEmail = table.Column<string>(type: "nvarchar(320)", maxLength: 320, nullable: false),
                     Sender = table.Column<string>(type: "nvarchar(320)", maxLength: 320, nullable: false),
                     Subject = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     Body = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -63,15 +64,15 @@ namespace EVA.Infrastructure.Persistence.Migrations
                 columns: new[] { "RequiresResponse", "PriorityLevel", "NextReminderAt" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_EmailRecords_AccountEmail_MessageId",
+                table: "EmailRecords",
+                columns: new[] { "AccountEmail", "MessageId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_EmailRecords_IsProcessed_ReceivedAt",
                 table: "EmailRecords",
                 columns: new[] { "IsProcessed", "ReceivedAt" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_EmailRecords_MessageId",
-                table: "EmailRecords",
-                column: "MessageId",
-                unique: true);
         }
 
         /// <inheritdoc />

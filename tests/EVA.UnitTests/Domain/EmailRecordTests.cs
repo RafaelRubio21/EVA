@@ -13,6 +13,7 @@ public sealed class EmailRecordTests
 
         var record = EmailRecord.Create(
             "MSG-001",
+            "rafael@estapar.com.br",
             "cliente@empresa.com",
             "Proposta comercial",
             "Segue anexo para avaliação.",
@@ -20,6 +21,7 @@ public sealed class EmailRecordTests
 
         Assert.NotEqual(Guid.Empty, record.Id);
         Assert.Equal("MSG-001", record.MessageId);
+        Assert.Equal("rafael@estapar.com.br", record.AccountEmail);
         Assert.Equal("cliente@empresa.com", record.Sender);
         Assert.Equal("Proposta comercial", record.Subject);
         Assert.False(record.IsProcessed);
@@ -27,22 +29,24 @@ public sealed class EmailRecordTests
     }
 
     [Theory]
-    [InlineData("", "sender@test.com", "Assunto")]
-    [InlineData("MSG-1", "", "Assunto")]
-    [InlineData("MSG-1", "sender@test.com", "")]
+    [InlineData("", "conta@test.com", "sender@test.com", "Assunto")]
+    [InlineData("MSG-1", "", "sender@test.com", "Assunto")]
+    [InlineData("MSG-1", "conta@test.com", "", "Assunto")]
+    [InlineData("MSG-1", "conta@test.com", "sender@test.com", "")]
     public void Create_WithMissingRequiredFields_ShouldThrowDomainException(
         string messageId,
+        string accountEmail,
         string sender,
         string subject)
     {
         Assert.Throws<DomainException>(() =>
-            EmailRecord.Create(messageId, sender, subject, "Corpo", DateTimeOffset.UtcNow));
+            EmailRecord.Create(messageId, accountEmail, sender, subject, "Corpo", DateTimeOffset.UtcNow));
     }
 
     [Fact]
     public void AttachAnalysis_ShouldMarkAsProcessedAndLinkAnalysis()
     {
-        var record = EmailRecord.Create("MSG-002", "a@b.com", "Assunto", "Corpo", DateTimeOffset.UtcNow);
+        var record = EmailRecord.Create("MSG-002", "conta@test.com", "a@b.com", "Assunto", "Corpo", DateTimeOffset.UtcNow);
         var analysis = EmailAnalysis.Create(
             record.Id,
             PriorityLevel.High,
@@ -60,7 +64,7 @@ public sealed class EmailRecordTests
     [Fact]
     public void CompleteResponse_ShouldClearRequiresResponseAndReminder()
     {
-        var record = EmailRecord.Create("MSG-003", "a@b.com", "Assunto", "Corpo", DateTimeOffset.UtcNow);
+        var record = EmailRecord.Create("MSG-003", "conta@test.com", "a@b.com", "Assunto", "Corpo", DateTimeOffset.UtcNow);
         var analysis = EmailAnalysis.Create(
             record.Id,
             PriorityLevel.Critical,
@@ -80,7 +84,7 @@ public sealed class EmailRecordTests
         var now = DateTimeOffset.UtcNow;
         var deadline = now.AddHours(4);
 
-        var record = EmailRecord.Create("MSG-004", "a@b.com", "Assunto", "Corpo", now);
+        var record = EmailRecord.Create("MSG-004", "conta@test.com", "a@b.com", "Assunto", "Corpo", now);
         var analysis = EmailAnalysis.Create(
             record.Id,
             PriorityLevel.High,
@@ -98,7 +102,7 @@ public sealed class EmailRecordTests
     public void RegisterReminderSent_ShouldAdvanceNextReminderByPrioritySnoozeInterval()
     {
         var now = DateTimeOffset.UtcNow;
-        var record = EmailRecord.Create("MSG-005", "a@b.com", "Assunto", "Corpo", now);
+        var record = EmailRecord.Create("MSG-005", "conta@test.com", "a@b.com", "Assunto", "Corpo", now);
         var analysis = EmailAnalysis.Create(
             record.Id,
             PriorityLevel.Critical,

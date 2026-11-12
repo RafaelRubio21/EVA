@@ -18,6 +18,7 @@ public sealed class GetEmailByIdQueryHandler(IEmailRepository emailRepository)
         return new EmailDetailsDto(
             email.Id,
             email.MessageId,
+            email.AccountEmail,
             email.Sender,
             email.Subject,
             email.Body,

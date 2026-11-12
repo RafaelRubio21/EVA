@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EVA.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(EvaDbContext))]
-    [Migration("20261112170847_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20261112200445_InitialCreateWithAccountEmail")]
+    partial class InitialCreateWithAccountEmail
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -65,6 +65,11 @@ namespace EVA.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("AccountEmail")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
+
                     b.Property<string>("Body")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -94,7 +99,7 @@ namespace EVA.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MessageId")
+                    b.HasIndex("AccountEmail", "MessageId")
                         .IsUnique();
 
                     b.HasIndex("IsProcessed", "ReceivedAt");

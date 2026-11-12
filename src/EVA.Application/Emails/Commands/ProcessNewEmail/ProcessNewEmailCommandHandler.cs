@@ -28,6 +28,7 @@ public sealed class ProcessNewEmailCommandHandler(
         // 1. Instancia a entidade rica de domínio
         var emailRecord = EmailRecord.Create(
             request.MessageId,
+            request.AccountEmail,
             request.Sender,
             request.Subject,
             request.Body,

@@ -27,6 +27,7 @@ public sealed class EmailCommandsHandlerTests
 
         var command = new ProcessNewEmailCommand(
             "MSG-100",
+            "rafael@estapar.com.br",
             "diretor@empresa.com",
             "URGENTE: Revisar contrato",
             "Preciso de retorno até amanhã.",
@@ -55,6 +56,7 @@ public sealed class EmailCommandsHandlerTests
 
         var command = new ProcessNewEmailCommand(
             "MSG-DUP",
+            "rafael@estapar.com.br",
             "user@empresa.com",
             "Assunto",
             "Corpo",
@@ -78,7 +80,7 @@ public sealed class EmailCommandsHandlerTests
             NullLogger<ProcessNewEmailCommandHandler>.Instance);
 
         var created = await processHandler.Handle(
-            new ProcessNewEmailCommand("MSG-200", "a@b.com", "Teste", "Corpo?", DateTimeOffset.UtcNow),
+            new ProcessNewEmailCommand("MSG-200", "rafael@estapar.com.br", "a@b.com", "Teste", "Corpo?", DateTimeOffset.UtcNow),
             CancellationToken.None);
 
         var completeHandler = new CompleteEmailResponseCommandHandler(

@@ -54,6 +54,7 @@ public sealed class EmailIngestionBackgroundService(
 
             var command = new ProcessNewEmailCommand(
                 rawEmail.MessageId,
+                rawEmail.AccountEmail,
                 rawEmail.Sender,
                 rawEmail.Subject,
                 rawEmail.Body,

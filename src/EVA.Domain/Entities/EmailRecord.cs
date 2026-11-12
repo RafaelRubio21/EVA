@@ -6,6 +6,7 @@ namespace EVA.Domain.Entities;
 public sealed class EmailRecord : Entity
 {
     public string MessageId { get; private set; } = string.Empty;
+    public string AccountEmail { get; private set; } = string.Empty;
     public string Sender { get; private set; } = string.Empty;
     public string Subject { get; private set; } = string.Empty;
     public string Body { get; private set; } = string.Empty;
@@ -19,6 +20,7 @@ public sealed class EmailRecord : Entity
 
     private EmailRecord(
         string messageId,
+        string accountEmail,
         string sender,
         string subject,
         string body,
@@ -27,6 +29,9 @@ public sealed class EmailRecord : Entity
         if (string.IsNullOrWhiteSpace(messageId))
             throw new DomainException("O identificador da mensagem (MessageId) é obrigatório.");
 
+        if (string.IsNullOrWhiteSpace(accountEmail))
+            throw new DomainException("A conta de destino (AccountEmail) é obrigatória.");
+
         if (string.IsNullOrWhiteSpace(sender))
             throw new DomainException("O remetente (Sender) é obrigatório.");
 
@@ -34,6 +39,7 @@ public sealed class EmailRecord : Entity
             throw new DomainException("O assunto (Subject) é obrigatório.");
 
         MessageId = messageId.Trim();
+        AccountEmail = accountEmail.Trim().ToLowerInvariant();
         Sender = sender.Trim();
         Subject = subject.Trim();
         Body = body ?? string.Empty;
@@ -43,12 +49,13 @@ public sealed class EmailRecord : Entity
 
     public static EmailRecord Create(
         string messageId,
+        string accountEmail,
         string sender,
         string subject,
         string body,
         DateTimeOffset receivedAt)
     {
-        return new EmailRecord(messageId, sender, subject, body, receivedAt);
+        return new EmailRecord(messageId, accountEmail, sender, subject, body, receivedAt);
     }
 
     public void AttachAnalysis(EmailAnalysis analysis)

@@ -17,6 +17,7 @@ public sealed class GetPendingEmailsQueryHandler(IEmailRepository emailRepositor
             .Select(e => new PendingEmailDto(
                 e.Id,
                 e.MessageId,
+                e.AccountEmail,
                 e.Sender,
                 e.Subject,
                 e.ReceivedAt,

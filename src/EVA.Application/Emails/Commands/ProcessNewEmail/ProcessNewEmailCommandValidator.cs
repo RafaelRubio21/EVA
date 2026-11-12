@@ -10,6 +10,11 @@ public sealed class ProcessNewEmailCommandValidator : AbstractValidator<ProcessN
             .NotEmpty().WithMessage("O MessageId do e-mail é obrigatório.")
             .MaximumLength(256);
 
+        RuleFor(x => x.AccountEmail)
+            .NotEmpty().WithMessage("A conta de destino (AccountEmail) é obrigatória.")
+            .EmailAddress().WithMessage("A conta de destino deve ser um e-mail válido.")
+            .MaximumLength(320);
+
         RuleFor(x => x.Sender)
             .NotEmpty().WithMessage("O remetente (Sender) é obrigatório.")
             .EmailAddress().WithMessage("O remetente deve ser um endereço de e-mail válido.")

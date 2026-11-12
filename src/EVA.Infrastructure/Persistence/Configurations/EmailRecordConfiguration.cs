@@ -19,7 +19,11 @@ public sealed class EmailRecordConfiguration : IEntityTypeConfiguration<EmailRec
             .IsRequired()
             .HasMaxLength(256);
 
-        builder.HasIndex(e => e.MessageId)
+        builder.Property(e => e.AccountEmail)
+            .IsRequired()
+            .HasMaxLength(320);
+
+        builder.HasIndex(e => new { e.AccountEmail, e.MessageId })
             .IsUnique();
 
         builder.Property(e => e.Sender)

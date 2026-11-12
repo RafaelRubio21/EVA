@@ -50,6 +50,7 @@ public sealed class ImapEmailProvider(
 
             results.Add(new RawEmailMessage(
                 messageId,
+                config.Username,
                 sender,
                 message.Subject ?? "(Sem Assunto)",
                 body,
