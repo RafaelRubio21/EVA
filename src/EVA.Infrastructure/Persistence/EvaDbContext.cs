@@ -7,6 +7,7 @@ public sealed class EvaDbContext(DbContextOptions<EvaDbContext> options) : DbCon
 {
     public DbSet<EmailRecord> EmailRecords => Set<EmailRecord>();
     public DbSet<EmailAnalysis> EmailAnalyses => Set<EmailAnalysis>();
+    public DbSet<EvaSettings> EvaSettings => Set<EvaSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -1,4 +1,5 @@
 using EVA.Application.Common.Interfaces;
+using EVA.Domain.Entities;
 using EVA.Domain.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -10,19 +11,24 @@ public sealed class ReminderNotificationBackgroundService(
     IServiceScopeFactory scopeFactory,
     ILogger<ReminderNotificationBackgroundService> logger) : BackgroundService
 {
-    private static readonly TimeSpan CheckInterval = TimeSpan.FromMinutes(1);
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation("[ReminderWorker] Monitor de lembretes da EVA iniciado.");
 
-        using var timer = new PeriodicTimer(CheckInterval);
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(EvaSettings.DefaultReminderCheckSeconds));
 
         do
         {
             try
             {
-                await CheckDueRemindersAsync(stoppingToken);
+                var nextInterval = await CheckDueRemindersAsync(stoppingToken);
+                if (timer.Period != nextInterval)
+                {
+                    timer.Period = nextInterval;
+                    logger.LogInformation(
+                        "[ReminderWorker] Intervalo de verificação ajustado para {IntervalSeconds}s.",
+                        nextInterval.TotalSeconds);
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -36,44 +42,50 @@ public sealed class ReminderNotificationBackgroundService(
         while (await timer.WaitForNextTickAsync(stoppingToken));
     }
 
-    private async Task CheckDueRemindersAsync(CancellationToken cancellationToken)
+    private async Task<TimeSpan> CheckDueRemindersAsync(CancellationToken cancellationToken)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         var emailRepository = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
+        var settingsRepository = scope.ServiceProvider.GetRequiredService<IEvaSettingsRepository>();
         var reminderNotifier = scope.ServiceProvider.GetRequiredService<IReminderNotifier>();
+
+        var settings = await settingsRepository.GetCurrentAsync(cancellationToken);
+        var intervalSeconds = settings?.ReminderCheckIntervalSeconds ?? EvaSettings.DefaultReminderCheckSeconds;
 
         var now = DateTimeOffset.UtcNow;
         var dueEmails = await emailRepository.GetDueRemindersAsync(now, cancellationToken);
 
-        if (dueEmails.Count == 0)
-            return;
-
-        foreach (var email in dueEmails)
+        if (dueEmails.Count > 0)
         {
-            if (email.Analysis is null)
-                continue;
+            foreach (var email in dueEmails)
+            {
+                if (email.Analysis is null)
+                    continue;
 
-            email.RegisterReminderSent(now);
+                email.RegisterReminderSent(now);
 
-            var payload = new ReminderNotificationPayload(
-                email.Id,
-                email.MessageId,
-                email.Sender,
-                email.Subject,
-                email.Analysis.PriorityLevel,
-                email.Analysis.Summary,
-                email.Analysis.Deadline,
-                email.Analysis.NextReminderAt);
+                var payload = new ReminderNotificationPayload(
+                    email.Id,
+                    email.MessageId,
+                    email.Sender,
+                    email.Subject,
+                    email.Analysis.PriorityLevel,
+                    email.Analysis.Summary,
+                    email.Analysis.Deadline,
+                    email.Analysis.NextReminderAt);
 
-            await reminderNotifier.NotifyDueReminderAsync(payload, cancellationToken);
+                await reminderNotifier.NotifyDueReminderAsync(payload, cancellationToken);
 
-            logger.LogWarning(
-                "[ALERTA EVA] Lembrete emitido para '{Subject}' ({Sender}). Próximo lembrete reagendado (snooze) para {NextReminderAt:O}.",
-                email.Subject,
-                email.Sender,
-                email.Analysis.NextReminderAt);
+                logger.LogWarning(
+                    "[ALERTA EVA] Lembrete emitido para '{Subject}' ({Sender}). Próximo lembrete reagendado (snooze) para {NextReminderAt:O}.",
+                    email.Subject,
+                    email.Sender,
+                    email.Analysis.NextReminderAt);
+            }
+
+            await emailRepository.SaveChangesAsync(cancellationToken);
         }
 
-        await emailRepository.SaveChangesAsync(cancellationToken);
+        return TimeSpan.FromSeconds(intervalSeconds);
     }
 }

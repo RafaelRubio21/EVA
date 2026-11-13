@@ -104,6 +104,25 @@ namespace EVA.Infrastructure.Persistence.Migrations
                     b.ToTable("EmailRecords", (string)null);
                 });
 
+            modelBuilder.Entity("EVA.Domain.Entities.EvaSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("EmailPollingIntervalSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ReminderCheckIntervalSeconds")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EvaSettings", (string)null);
+                });
+
             modelBuilder.Entity("EVA.Domain.Entities.EmailAnalysis", b =>
                 {
                     b.HasOne("EVA.Domain.Entities.EmailRecord", null)

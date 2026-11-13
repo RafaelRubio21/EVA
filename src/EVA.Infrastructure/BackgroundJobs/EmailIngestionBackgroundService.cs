@@ -1,5 +1,6 @@
 using EVA.Application.Common.Interfaces;
 using EVA.Application.Emails.Commands.ProcessNewEmail;
+using EVA.Domain.Entities;
 using EVA.Domain.Repositories;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,19 +13,24 @@ public sealed class EmailIngestionBackgroundService(
     IServiceScopeFactory scopeFactory,
     ILogger<EmailIngestionBackgroundService> logger) : BackgroundService
 {
-    private static readonly TimeSpan PollingInterval = TimeSpan.FromMinutes(2);
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation("[EmailIngestionWorker] Serviço de triagem automática iniciado.");
 
-        using var timer = new PeriodicTimer(PollingInterval);
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(EvaSettings.DefaultEmailPollingSeconds));
 
         do
         {
             try
             {
-                await IngestUnreadEmailsAsync(stoppingToken);
+                var nextInterval = await IngestUnreadEmailsAsync(stoppingToken);
+                if (timer.Period != nextInterval)
+                {
+                    timer.Period = nextInterval;
+                    logger.LogInformation(
+                        "[EmailIngestionWorker] Intervalo de leitura ajustado para {IntervalSeconds}s.",
+                        nextInterval.TotalSeconds);
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -38,12 +44,16 @@ public sealed class EmailIngestionBackgroundService(
         while (await timer.WaitForNextTickAsync(stoppingToken));
     }
 
-    private async Task IngestUnreadEmailsAsync(CancellationToken cancellationToken)
+    private async Task<TimeSpan> IngestUnreadEmailsAsync(CancellationToken cancellationToken)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         var emailProvider = scope.ServiceProvider.GetRequiredService<IEmailProvider>();
         var emailRepository = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
+        var settingsRepository = scope.ServiceProvider.GetRequiredService<IEvaSettingsRepository>();
         var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+
+        var settings = await settingsRepository.GetCurrentAsync(cancellationToken);
+        var intervalSeconds = settings?.EmailPollingIntervalSeconds ?? EvaSettings.DefaultEmailPollingSeconds;
 
         var unreadEmails = await emailProvider.FetchUnreadEmailsAsync(cancellationToken);
 
@@ -67,5 +77,7 @@ public sealed class EmailIngestionBackgroundService(
                 rawEmail.MessageId,
                 result.PriorityLevel);
         }
+
+        return TimeSpan.FromSeconds(intervalSeconds);
     }
 }
