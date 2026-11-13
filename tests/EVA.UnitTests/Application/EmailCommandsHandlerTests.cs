@@ -266,10 +266,15 @@ public sealed class EmailCommandsHandlerTests
     {
         public List<string> MarkedAsReadIds { get; } = [];
 
-        public Task<IReadOnlyList<RawEmailMessage>> FetchUnreadEmailsAsync(CancellationToken cancellationToken = default)
+        public Task<IReadOnlyList<RawEmailMessage>> FetchUnreadEmailsAsync(
+            string? accountEmail = null,
+            CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<RawEmailMessage>>([]);
 
-        public Task MarkAsReadAsync(string messageId, CancellationToken cancellationToken = default)
+        public Task MarkAsReadAsync(
+            string messageId,
+            string? accountEmail = null,
+            CancellationToken cancellationToken = default)
         {
             MarkedAsReadIds.Add(messageId);
             return Task.CompletedTask;

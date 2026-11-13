@@ -10,6 +10,12 @@ public sealed record RawEmailMessage(
 
 public interface IEmailProvider
 {
-    Task<IReadOnlyList<RawEmailMessage>> FetchUnreadEmailsAsync(CancellationToken cancellationToken = default);
-    Task MarkAsReadAsync(string messageId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<RawEmailMessage>> FetchUnreadEmailsAsync(
+        string? accountEmail = null,
+        CancellationToken cancellationToken = default);
+
+    Task MarkAsReadAsync(
+        string messageId,
+        string? accountEmail = null,
+        CancellationToken cancellationToken = default);
 }

@@ -49,13 +49,49 @@ public sealed class EmailIngestionBackgroundService(
         await using var scope = scopeFactory.CreateAsyncScope();
         var emailProvider = scope.ServiceProvider.GetRequiredService<IEmailProvider>();
         var emailRepository = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
+        var accountRepository = scope.ServiceProvider.GetRequiredService<IEmailAccountRepository>();
         var settingsRepository = scope.ServiceProvider.GetRequiredService<IEvaSettingsRepository>();
         var sender = scope.ServiceProvider.GetRequiredService<ISender>();
 
         var settings = await settingsRepository.GetCurrentAsync(cancellationToken);
         var intervalSeconds = settings?.EmailPollingIntervalSeconds ?? EvaSettings.DefaultEmailPollingSeconds;
 
-        var unreadEmails = await emailProvider.FetchUnreadEmailsAsync(cancellationToken);
+        var activeAccounts = await accountRepository.GetActiveAccountsAsync(cancellationToken);
+
+        // Se ainda não houver contas cadastradas na tabela EmailAccounts, usa o provedor padrão (retrocompatibilidade)
+        if (activeAccounts.Count == 0)
+        {
+            await ProcessAccountInboxAsync(null, emailProvider, emailRepository, sender, cancellationToken);
+        }
+        else
+        {
+            foreach (var account in activeAccounts)
+            {
+                try
+                {
+                    await ProcessAccountInboxAsync(account.Email, emailProvider, emailRepository, sender, cancellationToken);
+                    account.MarkSynced(DateTimeOffset.UtcNow);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "[EmailIngestionWorker] Falha ao sincronizar conta '{Email}'.", account.Email);
+                }
+            }
+
+            await accountRepository.SaveChangesAsync(cancellationToken);
+        }
+
+        return TimeSpan.FromSeconds(intervalSeconds);
+    }
+
+    private async Task ProcessAccountInboxAsync(
+        string? accountEmail,
+        IEmailProvider emailProvider,
+        IEmailRepository emailRepository,
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        var unreadEmails = await emailProvider.FetchUnreadEmailsAsync(accountEmail, cancellationToken);
 
         foreach (var rawEmail in unreadEmails)
         {
@@ -73,11 +109,10 @@ public sealed class EmailIngestionBackgroundService(
             var result = await sender.Send(command, cancellationToken);
 
             logger.LogInformation(
-                "[EmailIngestionWorker] E-mail '{MessageId}' triado automaticamente com prioridade {Priority}.",
+                "[EmailIngestionWorker] E-mail '{MessageId}' ({Account}) triado automaticamente com prioridade {Priority}.",
                 rawEmail.MessageId,
+                rawEmail.AccountEmail,
                 result.PriorityLevel);
         }
-
-        return TimeSpan.FromSeconds(intervalSeconds);
     }
 }

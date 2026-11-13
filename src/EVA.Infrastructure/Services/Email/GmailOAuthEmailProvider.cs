@@ -17,7 +17,9 @@ public sealed class GmailOAuthEmailProvider(
 {
     private static readonly string[] Scopes = [GmailService.Scope.GmailModify];
 
-    private async Task<GmailService?> GetGmailServiceAsync(CancellationToken cancellationToken)
+    private async Task<GmailService?> GetGmailServiceAsync(
+        string? accountEmail,
+        CancellationToken cancellationToken)
     {
         var config = options.Value;
 
@@ -39,10 +41,14 @@ public sealed class GmailOAuthEmailProvider(
 
         Directory.CreateDirectory(storagePath);
 
+        var userKey = string.IsNullOrWhiteSpace(accountEmail)
+            ? config.UserEmail
+            : accountEmail.Trim().ToLowerInvariant();
+
         var credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
             secrets,
             Scopes,
-            config.UserEmail,
+            userKey,
             cancellationToken,
             new FileDataStore(storagePath, true));
 
@@ -54,20 +60,21 @@ public sealed class GmailOAuthEmailProvider(
     }
 
     public async Task<IReadOnlyList<RawEmailMessage>> FetchUnreadEmailsAsync(
+        string? accountEmail = null,
         CancellationToken cancellationToken = default)
     {
-        var service = await GetGmailServiceAsync(cancellationToken);
+        var service = await GetGmailServiceAsync(accountEmail, cancellationToken);
         if (service is null)
         {
             logger.LogDebug("[GmailOAuthEmailProvider] Credenciais OAuth do Gmail não configuradas; delegando para ImapEmailProvider.");
-            return await fallbackProvider.FetchUnreadEmailsAsync(cancellationToken);
+            return await fallbackProvider.FetchUnreadEmailsAsync(accountEmail, cancellationToken);
         }
 
         try
         {
             var config = options.Value;
             var userProfile = await service.Users.GetProfile("me").ExecuteAsync(cancellationToken);
-            var accountEmail = userProfile.EmailAddress ?? config.UserEmail;
+            var resolvedAccountEmail = userProfile.EmailAddress ?? accountEmail ?? config.UserEmail;
 
             var listRequest = service.Users.Messages.List("me");
             listRequest.Q = "is:unread";
@@ -100,7 +107,7 @@ public sealed class GmailOAuthEmailProvider(
 
                 messages.Add(new RawEmailMessage(
                     finalMessageId,
-                    accountEmail,
+                    resolvedAccountEmail,
                     sender,
                     subject,
                     body,
@@ -112,18 +119,19 @@ public sealed class GmailOAuthEmailProvider(
         catch (Exception ex)
         {
             logger.LogError(ex, "[GmailOAuthEmailProvider] Erro ao buscar mensagens via Gmail API.");
-            return await fallbackProvider.FetchUnreadEmailsAsync(cancellationToken);
+            return await fallbackProvider.FetchUnreadEmailsAsync(accountEmail, cancellationToken);
         }
     }
 
     public async Task MarkAsReadAsync(
         string messageId,
+        string? accountEmail = null,
         CancellationToken cancellationToken = default)
     {
-        var service = await GetGmailServiceAsync(cancellationToken);
+        var service = await GetGmailServiceAsync(accountEmail, cancellationToken);
         if (service is null)
         {
-            await fallbackProvider.MarkAsReadAsync(messageId, cancellationToken);
+            await fallbackProvider.MarkAsReadAsync(messageId, accountEmail, cancellationToken);
             return;
         }
 

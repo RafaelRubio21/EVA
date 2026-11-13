@@ -14,6 +14,7 @@ public sealed class ImapEmailProvider(
     ILogger<ImapEmailProvider> logger) : IEmailProvider
 {
     public async Task<IReadOnlyList<RawEmailMessage>> FetchUnreadEmailsAsync(
+        string? accountEmail = null,
         CancellationToken cancellationToken = default)
     {
         var config = options.Value;
@@ -21,7 +22,7 @@ public sealed class ImapEmailProvider(
         if (string.IsNullOrWhiteSpace(config.Host) || string.IsNullOrWhiteSpace(config.Username))
         {
             logger.LogDebug("[ImapEmailProvider] Credenciais IMAP não configuradas; utilizando MockEmailProvider.");
-            return await fallbackProvider.FetchUnreadEmailsAsync(cancellationToken);
+            return await fallbackProvider.FetchUnreadEmailsAsync(accountEmail, cancellationToken);
         }
 
         using var client = new ImapClient();
@@ -63,13 +64,14 @@ public sealed class ImapEmailProvider(
 
     public async Task MarkAsReadAsync(
         string messageId,
+        string? accountEmail = null,
         CancellationToken cancellationToken = default)
     {
         var config = options.Value;
 
         if (string.IsNullOrWhiteSpace(config.Host) || string.IsNullOrWhiteSpace(config.Username))
         {
-            await fallbackProvider.MarkAsReadAsync(messageId, cancellationToken);
+            await fallbackProvider.MarkAsReadAsync(messageId, accountEmail, cancellationToken);
             return;
         }
 

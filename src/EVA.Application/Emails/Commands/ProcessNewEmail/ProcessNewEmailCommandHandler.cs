@@ -63,7 +63,7 @@ public sealed class ProcessNewEmailCommandHandler(
         // 5. Persiste no banco de dados e marca como lido no provedor de origem
         await emailRepository.AddAsync(emailRecord, cancellationToken);
         await emailRepository.SaveChangesAsync(cancellationToken);
-        await emailProvider.MarkAsReadAsync(emailRecord.MessageId, cancellationToken);
+        await emailProvider.MarkAsReadAsync(emailRecord.MessageId, emailRecord.AccountEmail, cancellationToken);
 
         // 6. Dispara notificação em tempo real caso seja um e-mail urgente/alta prioridade que exige resposta
         if (analysis.RequiresResponse && analysis.PriorityLevel >= PriorityLevel.High)

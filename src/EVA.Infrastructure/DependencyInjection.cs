@@ -30,6 +30,7 @@ public static class DependencyInjection
 
         services.AddScoped<IEmailRepository, EmailRepository>();
         services.AddScoped<IEvaSettingsRepository, EvaSettingsRepository>();
+        services.AddScoped<IEmailAccountRepository, EmailAccountRepository>();
 
         // Configurações tipadas de IA (Gemini) e E-mail (IMAP MailKit / Gmail OAuth)
         services.Configure<GeminiAiOptions>(configuration.GetSection(GeminiAiOptions.SectionName));
