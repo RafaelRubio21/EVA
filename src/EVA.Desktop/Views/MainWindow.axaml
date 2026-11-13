@@ -1,0 +1,85 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:EVA.Desktop.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
+        Width="1280" Height="820"
+        MinWidth="960" MinHeight="640"
+        WindowStartupLocation="CenterScreen"
+        Background="#09090B"
+        x:Class="EVA.Desktop.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="EVA — Entidade Virtual de Apoio">
+
+    <Grid ColumnDefinitions="240,*">
+
+        <!-- Sidebar -->
+        <Border Grid.Column="0" Background="#111114" BorderBrush="#27272A" BorderThickness="0,0,1,0" Padding="16">
+            <DockPanel LastChildFill="True">
+                <!-- Brand -->
+                <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="4,8,4,24">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Border Width="34" Height="34" CornerRadius="8" Background="#6366F1">
+                            <TextBlock Text="E" FontSize="18" FontWeight="Bold" Foreground="White"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="EVA" FontSize="18" FontWeight="Bold" Foreground="#FAFAFA" />
+                            <TextBlock Text="Secretária Virtual IA" FontSize="11" Foreground="#71717A" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- SignalR Status Footer -->
+                <Border DockPanel.Dock="Bottom" Background="#18181B" BorderBrush="#27272A" BorderThickness="1"
+                        CornerRadius="8" Padding="10" Margin="0,12,0,0">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Ellipse Width="8" Height="8" Fill="{Binding SignalRStatusColor}" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding SignalRStatus, StringFormat='Tempo real: {0}'}"
+                                   FontSize="12" Foreground="#D4D4D8" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Navigation -->
+                <StackPanel Spacing="6">
+                    <Button Classes="NavButton"
+                            Content="📥  Dashboard &amp; Triagem"
+                            Command="{Binding NavigateToCommand}"
+                            CommandParameter="Dashboard" />
+                    <Button Classes="NavButton"
+                            Content="📧  Contas Conectadas"
+                            Command="{Binding NavigateToCommand}"
+                            CommandParameter="Accounts" />
+                    <Button Classes="NavButton"
+                            Content="⚙️  Configurações"
+                            Command="{Binding NavigateToCommand}"
+                            CommandParameter="Settings" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Main Area -->
+        <Grid Grid.Column="1" RowDefinitions="Auto,*">
+            <!-- Real-time SignalR Toast Banner -->
+            <Border Grid.Row="0"
+                    IsVisible="{Binding HasRealtimeAlert}"
+                    Background="#312E81" BorderBrush="#6366F1" BorderThickness="0,0,0,1"
+                    Padding="16,10">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" Spacing="2">
+                        <TextBlock Text="{Binding RealtimeAlertTitle}" FontWeight="SemiBold" Foreground="#E0E7FF" FontSize="13" />
+                        <TextBlock Text="{Binding RealtimeAlertBody}" Foreground="#C7D2FE" FontSize="12" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Content="Dispensar" Classes="Secondary"
+                            Command="{Binding DismissAlertCommand}" Padding="10,4" FontSize="12" />
+                </Grid>
+            </Border>
+
+            <!-- Active View -->
+            <ContentControl Grid.Row="1" Content="{Binding CurrentView}" />
+        </Grid>
+
+    </Grid>
+</Window>

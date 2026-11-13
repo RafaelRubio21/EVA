@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/EVA.Api/EVA.Api.csproj" />
     <Project Path="src/EVA.Application/EVA.Application.csproj" />
+    <Project Path="src/EVA.Desktop/EVA.Desktop.csproj" />
     <Project Path="src/EVA.Domain/EVA.Domain.csproj" />
     <Project Path="src/EVA.Infrastructure/EVA.Infrastructure.csproj" />
   </Folder>

@@ -1,0 +1,59 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="EVA.Desktop.App"
+             xmlns:local="using:EVA.Desktop"
+             RequestedThemeVariant="Dark">
+
+    <Application.DataTemplates>
+        <local:ViewLocator />
+    </Application.DataTemplates>
+
+    <Application.Styles>
+        <FluentTheme />
+
+        <Style Selector="Border.Card">
+            <Setter Property="Background" Value="#18181B" />
+            <Setter Property="BorderBrush" Value="#27272A" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="16" />
+        </Style>
+
+        <Style Selector="Button.NavButton">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#A1A1AA" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="Medium" />
+        </Style>
+
+        <Style Selector="Button.NavButton:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#27272A" />
+            <Setter Property="Foreground" Value="#FAFAFA" />
+        </Style>
+
+        <Style Selector="Button.Primary">
+            <Setter Property="Background" Value="#6366F1" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <Style Selector="Button.Primary:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#4F46E5" />
+        </Style>
+
+        <Style Selector="Button.Secondary">
+            <Setter Property="Background" Value="#27272A" />
+            <Setter Property="Foreground" Value="#E4E4E7" />
+            <Setter Property="BorderBrush" Value="#3F3F46" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="12,8" />
+        </Style>
+    </Application.Styles>
+</Application>

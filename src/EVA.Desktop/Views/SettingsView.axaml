@@ -1,0 +1,68 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:EVA.Desktop.ViewModels"
+             x:Class="EVA.Desktop.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+    <ScrollViewer Margin="24">
+        <StackPanel Spacing="16" MaxWidth="680" HorizontalAlignment="Left">
+
+            <StackPanel Spacing="2">
+                <TextBlock Text="Configurações" FontSize="22" FontWeight="Bold" Foreground="#FAFAFA" />
+                <TextBlock Text="Defina a conexão com o servidor da EVA e os intervalos automáticos de triagem."
+                           FontSize="13" Foreground="#A1A1AA" />
+            </StackPanel>
+
+            <!-- Local Connection Card -->
+            <Border Classes="Card">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Conexão com a API Central" FontSize="15" FontWeight="SemiBold" Foreground="#FAFAFA" />
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="URL Base da API" FontSize="12" Foreground="#A1A1AA" />
+                        <TextBox Text="{Binding ApiBaseUrl}" PlaceholderText="http://localhost:5199" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="API Key (X-Api-Key)" FontSize="12" Foreground="#A1A1AA" />
+                        <TextBox Text="{Binding ApiKey}" PasswordChar="•" PlaceholderText="Cole aqui a sua Security:ApiKey" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Remote Worker Intervals Card -->
+            <Border Classes="Card">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Intervalos dos Workers (Servidor)" FontSize="15" FontWeight="SemiBold" Foreground="#FAFAFA" />
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Intervalo de leitura de novos e-mails (segundos — mín. 15s)" FontSize="12" Foreground="#A1A1AA" />
+                        <NumericUpDown Value="{Binding EmailPollingIntervalSeconds}" Minimum="15" Maximum="86400" Increment="15" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Intervalo de verificação de lembretes (segundos — mín. 15s)" FontSize="12" Foreground="#A1A1AA" />
+                        <NumericUpDown Value="{Binding ReminderCheckIntervalSeconds}" Minimum="15" Maximum="86400" Increment="15" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Feedback -->
+            <Border IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                    Background="#450A0A" BorderBrush="#991B1B" BorderThickness="1" CornerRadius="8" Padding="12">
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#FCA5A5" FontSize="13" TextWrapping="Wrap" />
+            </Border>
+
+            <Border IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                    Background="#064E3B" BorderBrush="#059669" BorderThickness="1" CornerRadius="8" Padding="12">
+                <TextBlock Text="{Binding StatusMessage}" Foreground="#A7F3D0" FontSize="13" TextWrapping="Wrap" />
+            </Border>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button Content="Salvar Configurações" Classes="Primary" Command="{Binding SaveAllCommand}" />
+                <Button Content="Recarregar" Classes="Secondary" Command="{Binding LoadCommand}" />
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,186 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:EVA.Desktop.ViewModels"
+             xmlns:models="using:EVA.Desktop.Models"
+             x:Class="EVA.Desktop.Views.DashboardView"
+             x:DataType="vm:DashboardViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="24" RowSpacing="16">
+
+        <!-- Header -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+            <StackPanel Grid.Column="0" Spacing="2">
+                <TextBlock Text="Dashboard &amp; Triagem" FontSize="22" FontWeight="Bold" Foreground="#FAFAFA" />
+                <TextBlock Text="Acompanhe prioridades classificadas por IA, prazos e rascunhos de resposta."
+                           FontSize="13" Foreground="#A1A1AA" />
+            </StackPanel>
+            <Button Grid.Column="1" Content="↻ Atualizar" Classes="Secondary"
+                    Command="{Binding RefreshCommand}" VerticalAlignment="Center" />
+        </Grid>
+
+        <!-- KPI Row -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*" ColumnSpacing="12">
+            <Border Grid.Column="0" Classes="Card">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="TOTAL TRIADOS" FontSize="11" FontWeight="SemiBold" Foreground="#71717A" />
+                    <TextBlock Text="{Binding TotalEmails}" FontSize="26" FontWeight="Bold" Foreground="#FAFAFA" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Classes="Card">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="PENDENTES DE RESPOSTA" FontSize="11" FontWeight="SemiBold" Foreground="#71717A" />
+                    <TextBlock Text="{Binding PendingResponses}" FontSize="26" FontWeight="Bold" Foreground="#818CF8" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Classes="Card">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="CRÍTICOS PENDENTES" FontSize="11" FontWeight="SemiBold" Foreground="#71717A" />
+                    <TextBlock Text="{Binding CriticalPending}" FontSize="26" FontWeight="Bold" Foreground="#EF4444" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="3" Classes="Card">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="PRAZOS VENCIDOS" FontSize="11" FontWeight="SemiBold" Foreground="#71717A" />
+                    <TextBlock Text="{Binding OverdueDeadlines}" FontSize="26" FontWeight="Bold" Foreground="#F97316" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Filter & Feedback Bar -->
+        <StackPanel Grid.Row="2" Spacing="8">
+            <Border Classes="Card" Padding="12">
+                <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Conta:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#A1A1AA" FontSize="13" />
+                    <ComboBox ItemsSource="{Binding AccountFilters}"
+                              SelectedItem="{Binding SelectedAccountFilter}"
+                              MinWidth="210" Margin="0,0,16,0" />
+
+                    <TextBlock Text="Prioridade:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#A1A1AA" FontSize="13" />
+                    <ComboBox ItemsSource="{Binding PriorityFilters}"
+                              SelectedItem="{Binding SelectedPriorityFilter}"
+                              MinWidth="130" Margin="0,0,16,0" />
+
+                    <CheckBox Content="Somente pendentes de resposta"
+                              IsChecked="{Binding OnlyPending}"
+                              VerticalAlignment="Center" Foreground="#E4E4E7" />
+                </WrapPanel>
+            </Border>
+
+            <Border IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                    Background="#450A0A" BorderBrush="#991B1B" BorderThickness="1" CornerRadius="8" Padding="12">
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#FCA5A5" FontSize="13" TextWrapping="Wrap" />
+            </Border>
+
+            <Border IsVisible="{Binding StatusBanner, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                    Background="#064E3B" BorderBrush="#059669" BorderThickness="1" CornerRadius="8" Padding="12">
+                <TextBlock Text="{Binding StatusBanner}" Foreground="#A7F3D0" FontSize="13" TextWrapping="Wrap" />
+            </Border>
+        </StackPanel>
+
+        <!-- Master-Detail Split -->
+        <Grid Grid.Row="3" ColumnDefinitions="380,*" ColumnSpacing="16">
+
+            <!-- Email List (Master) -->
+            <Border Grid.Column="0" Classes="Card" Padding="8">
+                <ListBox ItemsSource="{Binding Emails}"
+                         SelectedItem="{Binding SelectedEmail}"
+                         Background="Transparent"
+                         BorderThickness="0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="models:EmailSummaryDto">
+                            <Border Padding="10" Margin="0,2" CornerRadius="8" Background="#111114" BorderBrush="#27272A" BorderThickness="1">
+                                <StackPanel Spacing="6">
+                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                        <Border Grid.Column="0" Background="{Binding PriorityColor}" CornerRadius="4" Padding="6,2">
+                                            <TextBlock Text="{Binding PriorityLabel}" FontSize="10" FontWeight="Bold" Foreground="White" />
+                                        </Border>
+                                        <TextBlock Grid.Column="2" Text="{Binding ReceivedAtFormatted}" FontSize="11" Foreground="#71717A" VerticalAlignment="Center" />
+                                    </Grid>
+                                    <TextBlock Text="{Binding Subject}" FontWeight="SemiBold" FontSize="13" Foreground="#FAFAFA" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding Sender}" FontSize="12" Foreground="#A1A1AA" TextTrimming="CharacterEllipsis" />
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Text="{Binding AccountEmail}" FontSize="11" Foreground="#6366F1" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Grid.Column="1" Text="{Binding DeadlineFormatted}" FontSize="11" Foreground="#71717A" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+
+            <!-- Email Details (Detail) -->
+            <Border Grid.Column="1" Classes="Card">
+                <Panel>
+                    <!-- Empty State -->
+                    <StackPanel IsVisible="{Binding SelectedEmailDetails, Converter={x:Static ObjectConverters.IsNull}}"
+                                VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="8">
+                        <TextBlock Text="Selecione um e-mail na lista" FontSize="16" FontWeight="SemiBold" Foreground="#A1A1AA" HorizontalAlignment="Center" />
+                        <TextBlock Text="O resumo da IA, prazo, corpo e sugestão de resposta aparecerão aqui."
+                                   FontSize="13" Foreground="#71717A" HorizontalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- Populated Details -->
+                    <ScrollViewer IsVisible="{Binding SelectedEmailDetails, Converter={x:Static ObjectConverters.IsNotNull}}">
+                        <StackPanel Spacing="16" DataContext="{Binding SelectedEmailDetails}">
+                            <!-- Title & Metadata -->
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="{Binding Subject}" FontSize="19" FontWeight="Bold" Foreground="#FAFAFA" TextWrapping="Wrap" />
+                                <WrapPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Sender, StringFormat='De: {0}'}" FontSize="13" Foreground="#D4D4D8" Margin="0,0,16,0" />
+                                    <TextBlock Text="{Binding AccountEmail, StringFormat='Conta: {0}'}" FontSize="13" Foreground="#818CF8" Margin="0,0,16,0" />
+                                    <TextBlock Text="{Binding PriorityLabel, StringFormat='Prioridade: {0}'}" FontSize="13" FontWeight="SemiBold" Foreground="#FBBF24" />
+                                </WrapPanel>
+                            </StackPanel>
+
+                            <!-- Action Bar -->
+                            <WrapPanel Orientation="Horizontal" IsVisible="{Binding RequiresResponse, FallbackValue=False}">
+                                <Button Content="✓ Concluir Resposta" Classes="Primary"
+                                        Command="{Binding $parent[UserControl].((vm:DashboardViewModel)DataContext).CompleteResponseCommand}"
+                                        Margin="0,0,8,0" />
+                                <Button Content="⏰ Adiar +1h" Classes="Secondary"
+                                        Command="{Binding $parent[UserControl].((vm:DashboardViewModel)DataContext).SnoozeReminderCommand}"
+                                        CommandParameter="1" Margin="0,0,8,0" />
+                                <Button Content="⏰ Adiar +4h" Classes="Secondary"
+                                        Command="{Binding $parent[UserControl].((vm:DashboardViewModel)DataContext).SnoozeReminderCommand}"
+                                        CommandParameter="4" />
+                            </WrapPanel>
+
+                            <!-- AI Summary -->
+                            <Border Background="#1E1B4B" BorderBrush="#4338CA" BorderThickness="1" CornerRadius="8" Padding="14">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="RESUMO DA IA (EVA)" FontSize="11" FontWeight="Bold" Foreground="#A5B4FC" />
+                                    <TextBlock Text="{Binding Summary}" FontSize="13" Foreground="#E0E7FF" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Suggested Reply Draft -->
+                            <Border IsVisible="{Binding SuggestedReplyDraft, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                    Background="#111827" BorderBrush="#374151" BorderThickness="1" CornerRadius="8" Padding="14">
+                                <StackPanel Spacing="8">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Text="SUGESTÃO DE RASCUNHO DE RESPOSTA" FontSize="11" FontWeight="Bold" Foreground="#34D399" VerticalAlignment="Center" />
+                                        <Button Grid.Column="1" Content="📋 Copiar Rascunho" Classes="Secondary"
+                                                Command="{Binding $parent[UserControl].((vm:DashboardViewModel)DataContext).CopyDraftCommand}"
+                                                Padding="10,4" FontSize="12" />
+                                    </Grid>
+                                    <TextBox Text="{Binding SuggestedReplyDraft}" IsReadOnly="True" AcceptsReturn="True"
+                                             TextWrapping="Wrap" Background="#09090B" BorderThickness="0" Padding="10" FontSize="13" />
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Original Body -->
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="CONTEÚDO ORIGINAL" FontSize="11" FontWeight="Bold" Foreground="#71717A" />
+                                <Border Background="#09090B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="14">
+                                    <SelectableTextBlock Text="{Binding Body}" FontSize="13" Foreground="#D4D4D8" TextWrapping="Wrap" />
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Panel>
+            </Border>
+        </Grid>
+
+    </Grid>
+</UserControl>
