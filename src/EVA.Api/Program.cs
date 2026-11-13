@@ -1,4 +1,5 @@
 using EVA.Api.Hubs;
+using EVA.Api.Security;
 using EVA.Api.Services;
 using EVA.Application;
 using EVA.Application.Common.Interfaces;
@@ -10,9 +11,41 @@ using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
+const string CorsPolicyName = "EvaClientsPolicy";
+
 // Camadas da Clean Architecture
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// CORS para clientes Web (Frontend), Desktop e SignalR
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(CorsPolicyName, policy =>
+    {
+        if (allowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        }
+        else
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
+    });
+});
+
+// Autenticação por API Key (X-Api-Key ou ?api_key= para SignalR WebSockets)
+builder.Services.AddAuthentication(ApiKeyAuthenticationOptions.SchemeName)
+    .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(
+        ApiKeyAuthenticationOptions.SchemeName,
+        options => options.ApiKey = builder.Configuration["Security:ApiKey"] ?? string.Empty);
+
+builder.Services.AddAuthorization();
 
 // SignalR e Notificador em Tempo Real para Clientes Desktop e Mobile
 builder.Services.AddSignalR();
@@ -74,6 +107,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors(CorsPolicyName);
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<EvaNotificationsHub>("/hubs/eva-notifications");

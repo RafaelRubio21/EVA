@@ -1,10 +1,12 @@
 using EVA.Application.Settings.Commands.UpdateEvaSettings;
 using EVA.Application.Settings.Queries.GetEvaSettings;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EVA.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/v1/[controller]")]
 [Produces("application/json")]

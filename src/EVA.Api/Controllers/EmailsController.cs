@@ -7,12 +7,14 @@ using EVA.Application.Emails.Queries.GetEmails;
 using EVA.Application.Emails.Queries.GetPendingEmails;
 using EVA.Domain.Enums;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EVA.Api.Controllers;
 
 public sealed record RescheduleReminderRequest(DateTimeOffset NextReminderAt);
 
+[Authorize]
 [ApiController]
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
