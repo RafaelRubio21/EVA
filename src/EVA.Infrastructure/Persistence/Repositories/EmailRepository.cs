@@ -100,6 +100,58 @@ public sealed class EmailRepository(EvaDbContext dbContext) : IEmailRepository
         return (items, totalCount);
     }
 
+    public async Task<EmailStatsSummary> GetStatsAsync(
+        string? accountEmail,
+        DateTimeOffset referenceTime,
+        CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.EmailRecords
+            .AsNoTracking()
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(accountEmail))
+        {
+            var normalizedAccount = accountEmail.Trim().ToLowerInvariant();
+            query = query.Where(e => e.AccountEmail == normalizedAccount);
+        }
+
+        var totalEmails = await query.CountAsync(cancellationToken);
+
+        var pendingQuery = query.Where(e => e.IsProcessed && e.Analysis != null && e.Analysis.RequiresResponse);
+
+        var pendingResponses = await pendingQuery.CountAsync(cancellationToken);
+        var overdueDeadlines = await pendingQuery.CountAsync(
+            e => e.Analysis!.Deadline != null && e.Analysis.Deadline < referenceTime,
+            cancellationToken);
+
+        var priorityCounts = await pendingQuery
+            .GroupBy(e => e.Analysis!.PriorityLevel)
+            .Select(g => new { Priority = g.Key, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+
+        var byAccount = await query
+            .GroupBy(e => e.AccountEmail)
+            .Select(g => new AccountEmailStats(
+                g.Key,
+                g.Count(),
+                g.Count(e => e.IsProcessed && e.Analysis != null && e.Analysis.RequiresResponse)))
+            .OrderBy(a => a.AccountEmail)
+            .ToListAsync(cancellationToken);
+
+        int GetCount(PriorityLevel level) =>
+            priorityCounts.FirstOrDefault(p => p.Priority == level)?.Count ?? 0;
+
+        return new EmailStatsSummary(
+            totalEmails,
+            pendingResponses,
+            overdueDeadlines,
+            GetCount(PriorityLevel.Critical),
+            GetCount(PriorityLevel.High),
+            GetCount(PriorityLevel.Normal),
+            GetCount(PriorityLevel.Low),
+            byAccount);
+    }
+
     public async Task<IReadOnlyList<EmailRecord>> GetDueRemindersAsync(
         DateTimeOffset referenceTime,
         CancellationToken cancellationToken = default)

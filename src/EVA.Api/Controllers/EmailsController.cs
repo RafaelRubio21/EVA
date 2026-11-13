@@ -4,8 +4,10 @@ using EVA.Application.Emails.Commands.ProcessNewEmail;
 using EVA.Application.Emails.Commands.RescheduleEmailReminder;
 using EVA.Application.Emails.Queries.GetEmailById;
 using EVA.Application.Emails.Queries.GetEmails;
+using EVA.Application.Emails.Queries.GetEmailStats;
 using EVA.Application.Emails.Queries.GetPendingEmails;
 using EVA.Domain.Enums;
+using EVA.Domain.Repositories;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -37,6 +39,19 @@ public sealed class EmailsController(ISender sender) : ControllerBase
         var result = await sender.Send(
             new GetEmailsQuery(accountEmail, priorityLevel, requiresResponse, page, pageSize),
             cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Retorna estatísticas consolidadas de e-mails, prioridades pendentes e prazos vencidos para o dashboard.
+    /// </summary>
+    [HttpGet("stats")]
+    [ProducesResponseType(typeof(EmailStatsSummary), StatusCodes.Status200OK)]
+    public async Task<ActionResult<EmailStatsSummary>> GetStats(
+        [FromQuery] string? accountEmail,
+        CancellationToken cancellationToken)
+    {
+        var result = await sender.Send(new GetEmailStatsQuery(accountEmail), cancellationToken);
         return Ok(result);
     }
 

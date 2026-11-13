@@ -2,6 +2,7 @@ using EVA.Application.Common.Interfaces;
 using EVA.Application.Emails.Commands.CompleteEmailResponse;
 using EVA.Application.Emails.Commands.ProcessNewEmail;
 using EVA.Application.Emails.Queries.GetEmails;
+using EVA.Application.Emails.Queries.GetEmailStats;
 using EVA.Domain.Entities;
 using EVA.Domain.Enums;
 using EVA.Domain.Exceptions;
@@ -71,6 +72,34 @@ public sealed class EmailCommandsHandlerTests
         Assert.Equal(1, paged.TotalCount);
         Assert.Single(paged.Items);
         Assert.Equal("MSG-A1", paged.Items[0].MessageId);
+    }
+
+    [Fact]
+    public async Task GetEmailStats_ShouldAggregateTotalsAndAccountBreakdown()
+    {
+        var repository = new InMemoryEmailRepository();
+        var processHandler = new ProcessNewEmailCommandHandler(
+            repository,
+            new StubAiAnalyzer(),
+            new StubEmailProvider(),
+            new StubReminderNotifier(),
+            NullLogger<ProcessNewEmailCommandHandler>.Instance);
+
+        await processHandler.Handle(
+            new ProcessNewEmailCommand("MSG-S1", "rafael@estapar.com.br", "a@x.com", "S1", "Corpo", DateTimeOffset.UtcNow.AddHours(-10)),
+            CancellationToken.None);
+        await processHandler.Handle(
+            new ProcessNewEmailCommand("MSG-S2", "rafael3j@gmail.com", "b@x.com", "S2", "Corpo", DateTimeOffset.UtcNow),
+            CancellationToken.None);
+
+        var statsHandler = new GetEmailStatsQueryHandler(repository);
+        var stats = await statsHandler.Handle(new GetEmailStatsQuery(), CancellationToken.None);
+
+        Assert.Equal(2, stats.TotalEmails);
+        Assert.Equal(2, stats.PendingResponses);
+        Assert.Equal(1, stats.OverdueDeadlines);
+        Assert.Equal(2, stats.CriticalPending);
+        Assert.Equal(2, stats.ByAccount.Count);
     }
 
     [Fact]
@@ -173,6 +202,37 @@ public sealed class EmailCommandsHandlerTests
             var filtered = query.OrderByDescending(r => r.ReceivedAt).ToList();
             var items = filtered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
             return Task.FromResult<(IReadOnlyList<EmailRecord>, int)>((items, filtered.Count));
+        }
+
+        public Task<EmailStatsSummary> GetStatsAsync(
+            string? accountEmail,
+            DateTimeOffset referenceTime,
+            CancellationToken cancellationToken = default)
+        {
+            var query = _records.AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(accountEmail))
+                query = query.Where(r => r.AccountEmail == accountEmail.Trim().ToLowerInvariant());
+
+            var list = query.ToList();
+            var pending = list.Where(r => r.IsProcessed && r.Analysis?.RequiresResponse == true).ToList();
+            var byAccount = list
+                .GroupBy(r => r.AccountEmail)
+                .Select(g => new AccountEmailStats(
+                    g.Key,
+                    g.Count(),
+                    g.Count(r => r.IsProcessed && r.Analysis?.RequiresResponse == true)))
+                .OrderBy(a => a.AccountEmail)
+                .ToList();
+
+            return Task.FromResult(new EmailStatsSummary(
+                list.Count,
+                pending.Count,
+                pending.Count(r => r.Analysis!.Deadline < referenceTime),
+                pending.Count(r => r.Analysis!.PriorityLevel == PriorityLevel.Critical),
+                pending.Count(r => r.Analysis!.PriorityLevel == PriorityLevel.High),
+                pending.Count(r => r.Analysis!.PriorityLevel == PriorityLevel.Normal),
+                pending.Count(r => r.Analysis!.PriorityLevel == PriorityLevel.Low),
+                byAccount));
         }
 
         public Task<IReadOnlyList<EmailRecord>> GetDueRemindersAsync(DateTimeOffset referenceTime, CancellationToken cancellationToken = default)
