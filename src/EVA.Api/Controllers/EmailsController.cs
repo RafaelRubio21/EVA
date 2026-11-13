@@ -1,8 +1,11 @@
+using EVA.Application.Common.Models;
 using EVA.Application.Emails.Commands.CompleteEmailResponse;
 using EVA.Application.Emails.Commands.ProcessNewEmail;
 using EVA.Application.Emails.Commands.RescheduleEmailReminder;
 using EVA.Application.Emails.Queries.GetEmailById;
+using EVA.Application.Emails.Queries.GetEmails;
 using EVA.Application.Emails.Queries.GetPendingEmails;
+using EVA.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,15 +19,39 @@ public sealed record RescheduleReminderRequest(DateTimeOffset NextReminderAt);
 public sealed class EmailsController(ISender sender) : ControllerBase
 {
     /// <summary>
+    /// Lista e-mails com filtros opcionais (conta, prioridade, pendência de resposta) e paginação.
+    /// </summary>
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<EmailSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResult<EmailSummaryDto>>> GetEmails(
+        [FromQuery] string? accountEmail,
+        [FromQuery] PriorityLevel? priorityLevel,
+        [FromQuery] bool? requiresResponse,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await sender.Send(
+            new GetEmailsQuery(accountEmail, priorityLevel, requiresResponse, page, pageSize),
+            cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Lista todos os e-mails já triados pela IA que exigem resposta do usuário,
     /// ordenados por nível de prioridade, prazo final e data de recebimento.
     /// </summary>
     [HttpGet("pending")]
     [ProducesResponseType(typeof(IReadOnlyList<PendingEmailDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<PendingEmailDto>>> GetPendingEmails(
+        [FromQuery] string? accountEmail,
+        [FromQuery] PriorityLevel? priorityLevel,
         CancellationToken cancellationToken)
     {
-        var result = await sender.Send(new GetPendingEmailsQuery(), cancellationToken);
+        var result = await sender.Send(
+            new GetPendingEmailsQuery(accountEmail, priorityLevel),
+            cancellationToken);
         return Ok(result);
     }
 

@@ -16,5 +16,6 @@ public sealed record ProcessNewEmailResult(
     PriorityLevel PriorityLevel,
     bool RequiresResponse,
     string Summary,
+    string? SuggestedReplyDraft,
     DateTimeOffset? Deadline,
     DateTimeOffset? NextReminderAt);

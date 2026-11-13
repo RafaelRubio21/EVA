@@ -54,7 +54,8 @@ public sealed class ProcessNewEmailCommandHandler(
             aiResult.RequiresResponse,
             aiResult.Summary,
             aiResult.Deadline,
-            aiResult.SuggestedReminderAt);
+            aiResult.SuggestedReminderAt,
+            aiResult.SuggestedReplyDraft);
 
         // 4. Anexa a análise ao agregado EmailRecord e marca como processado
         emailRecord.AttachAnalysis(analysis);
@@ -85,6 +86,7 @@ public sealed class ProcessNewEmailCommandHandler(
             analysis.PriorityLevel,
             analysis.RequiresResponse,
             analysis.Summary,
+            analysis.SuggestedReplyDraft,
             analysis.Deadline,
             analysis.NextReminderAt);
     }

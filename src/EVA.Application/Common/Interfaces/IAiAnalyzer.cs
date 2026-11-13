@@ -7,7 +7,8 @@ public sealed record AiEmailAnalysisResult(
     bool RequiresResponse,
     string Summary,
     DateTimeOffset? Deadline,
-    DateTimeOffset? SuggestedReminderAt);
+    DateTimeOffset? SuggestedReminderAt,
+    string? SuggestedReplyDraft = null);
 
 public interface IAiAnalyzer
 {

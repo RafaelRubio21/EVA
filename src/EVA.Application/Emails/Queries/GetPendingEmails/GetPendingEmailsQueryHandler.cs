@@ -10,7 +10,10 @@ public sealed class GetPendingEmailsQueryHandler(IEmailRepository emailRepositor
         GetPendingEmailsQuery request,
         CancellationToken cancellationToken)
     {
-        var pendingEmails = await emailRepository.GetPendingResponsesAsync(cancellationToken);
+        var pendingEmails = await emailRepository.GetPendingResponsesAsync(
+            request.AccountEmail,
+            request.PriorityLevel,
+            cancellationToken);
 
         return pendingEmails
             .Where(e => e.Analysis is not null)
@@ -24,6 +27,7 @@ public sealed class GetPendingEmailsQueryHandler(IEmailRepository emailRepositor
                 e.Analysis!.PriorityLevel,
                 e.Analysis.PriorityLevel.ToString(),
                 e.Analysis.Summary,
+                e.Analysis.SuggestedReplyDraft,
                 e.Analysis.Deadline,
                 e.Analysis.NextReminderAt))
             .ToList();

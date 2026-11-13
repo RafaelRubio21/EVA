@@ -32,6 +32,10 @@ public sealed class EmailAnalysisConfiguration : IEntityTypeConfiguration<EmailA
             .IsRequired()
             .HasMaxLength(1500);
 
+        builder.Property(a => a.SuggestedReplyDraft)
+            .IsRequired(false)
+            .HasMaxLength(4000);
+
         builder.Property(a => a.Deadline)
             .IsRequired(false);
 

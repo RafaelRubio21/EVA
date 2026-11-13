@@ -15,5 +15,6 @@ public sealed record EmailDetailsDto(
     string? PriorityLabel,
     bool? RequiresResponse,
     string? Summary,
+    string? SuggestedReplyDraft,
     DateTimeOffset? Deadline,
     DateTimeOffset? NextReminderAt);

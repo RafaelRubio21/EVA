@@ -49,12 +49,17 @@ public sealed class MockAiAnalyzer(ILogger<MockAiAnalyzer> logger) : IAiAnalyzer
                       $"Prioridade classificada como {priority}. " +
                       (requiresResponse ? "Exige resposta do usuário." : "Apenas informativo.");
 
+        var replyDraft = requiresResponse
+            ? $"Olá,\n\nRecebi sua mensagem sobre \"{subject}\" e já estou analisando os detalhes. Retorno em breve com a confirmação.\n\nAtenciosamente,"
+            : null;
+
         var result = new AiEmailAnalysisResult(
             priority,
             requiresResponse,
             summary,
             deadline,
-            reminder);
+            reminder,
+            replyDraft);
 
         return Task.FromResult(result);
     }

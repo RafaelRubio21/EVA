@@ -1,6 +1,7 @@
 using EVA.Application.Common.Interfaces;
 using EVA.Application.Emails.Commands.CompleteEmailResponse;
 using EVA.Application.Emails.Commands.ProcessNewEmail;
+using EVA.Application.Emails.Queries.GetEmails;
 using EVA.Domain.Entities;
 using EVA.Domain.Enums;
 using EVA.Domain.Exceptions;
@@ -38,9 +39,38 @@ public sealed class EmailCommandsHandlerTests
         Assert.NotEqual(Guid.Empty, result.EmailRecordId);
         Assert.Equal(PriorityLevel.Critical, result.PriorityLevel);
         Assert.True(result.RequiresResponse);
+        Assert.Equal("Rascunho sugerido de teste", result.SuggestedReplyDraft);
         Assert.Contains("MSG-100", emailProvider.MarkedAsReadIds);
         Assert.Single(reminderNotifier.CriticalAlerts);
         Assert.Equal("MSG-100", reminderNotifier.CriticalAlerts[0].MessageId);
+    }
+
+    [Fact]
+    public async Task GetEmails_ShouldFilterByAccountEmailAndPaginate()
+    {
+        var repository = new InMemoryEmailRepository();
+        var processHandler = new ProcessNewEmailCommandHandler(
+            repository,
+            new StubAiAnalyzer(),
+            new StubEmailProvider(),
+            new StubReminderNotifier(),
+            NullLogger<ProcessNewEmailCommandHandler>.Instance);
+
+        await processHandler.Handle(
+            new ProcessNewEmailCommand("MSG-A1", "rafael@estapar.com.br", "a@x.com", "A1", "Corpo", DateTimeOffset.UtcNow),
+            CancellationToken.None);
+        await processHandler.Handle(
+            new ProcessNewEmailCommand("MSG-B1", "rafael3j@gmail.com", "b@x.com", "B1", "Corpo", DateTimeOffset.UtcNow),
+            CancellationToken.None);
+
+        var queryHandler = new GetEmailsQueryHandler(repository);
+        var paged = await queryHandler.Handle(
+            new GetEmailsQuery(AccountEmail: "rafael@estapar.com.br", Page: 1, PageSize: 10),
+            CancellationToken.None);
+
+        Assert.Equal(1, paged.TotalCount);
+        Assert.Single(paged.Items);
+        Assert.Equal("MSG-A1", paged.Items[0].MessageId);
     }
 
     [Fact]
@@ -110,9 +140,40 @@ public sealed class EmailCommandsHandlerTests
             return Task.CompletedTask;
         }
 
-        public Task<IReadOnlyList<EmailRecord>> GetPendingResponsesAsync(CancellationToken cancellationToken = default)
-            => Task.FromResult<IReadOnlyList<EmailRecord>>(
-                _records.Where(r => r.IsProcessed && r.Analysis?.RequiresResponse == true).ToList());
+        public Task<IReadOnlyList<EmailRecord>> GetPendingResponsesAsync(
+            string? accountEmail = null,
+            PriorityLevel? priorityLevel = null,
+            CancellationToken cancellationToken = default)
+        {
+            var query = _records.Where(r => r.IsProcessed && r.Analysis?.RequiresResponse == true);
+            if (!string.IsNullOrWhiteSpace(accountEmail))
+                query = query.Where(r => r.AccountEmail == accountEmail.Trim().ToLowerInvariant());
+            if (priorityLevel.HasValue)
+                query = query.Where(r => r.Analysis?.PriorityLevel == priorityLevel.Value);
+
+            return Task.FromResult<IReadOnlyList<EmailRecord>>(query.ToList());
+        }
+
+        public Task<(IReadOnlyList<EmailRecord> Items, int TotalCount)> GetPagedAsync(
+            string? accountEmail,
+            PriorityLevel? priorityLevel,
+            bool? requiresResponse,
+            int page,
+            int pageSize,
+            CancellationToken cancellationToken = default)
+        {
+            var query = _records.AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(accountEmail))
+                query = query.Where(r => r.AccountEmail == accountEmail.Trim().ToLowerInvariant());
+            if (priorityLevel.HasValue)
+                query = query.Where(r => r.Analysis?.PriorityLevel == priorityLevel.Value);
+            if (requiresResponse.HasValue)
+                query = query.Where(r => r.Analysis?.RequiresResponse == requiresResponse.Value);
+
+            var filtered = query.OrderByDescending(r => r.ReceivedAt).ToList();
+            var items = filtered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            return Task.FromResult<(IReadOnlyList<EmailRecord>, int)>((items, filtered.Count));
+        }
 
         public Task<IReadOnlyList<EmailRecord>> GetDueRemindersAsync(DateTimeOffset referenceTime, CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<EmailRecord>>(
@@ -136,7 +197,8 @@ public sealed class EmailCommandsHandlerTests
                 RequiresResponse: true,
                 Summary: "Resumo de teste",
                 Deadline: receivedAt.AddHours(4),
-                SuggestedReminderAt: receivedAt.AddHours(1)));
+                SuggestedReminderAt: receivedAt.AddHours(1),
+                SuggestedReplyDraft: "Rascunho sugerido de teste"));
         }
     }
 

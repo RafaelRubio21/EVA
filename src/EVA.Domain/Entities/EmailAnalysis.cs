@@ -10,6 +10,7 @@ public sealed class EmailAnalysis : Entity
     public PriorityLevel PriorityLevel { get; private set; }
     public bool RequiresResponse { get; private set; }
     public string Summary { get; private set; } = string.Empty;
+    public string? SuggestedReplyDraft { get; private set; }
     public DateTimeOffset? Deadline { get; private set; }
     public DateTimeOffset? NextReminderAt { get; private set; }
 
@@ -22,7 +23,8 @@ public sealed class EmailAnalysis : Entity
         bool requiresResponse,
         string summary,
         DateTimeOffset? deadline,
-        DateTimeOffset? nextReminderAt)
+        DateTimeOffset? nextReminderAt,
+        string? suggestedReplyDraft)
     {
         if (emailRecordId == Guid.Empty)
             throw new DomainException("A análise deve estar associada a um EmailRecord válido.");
@@ -37,6 +39,9 @@ public sealed class EmailAnalysis : Entity
         PriorityLevel = priorityLevel;
         RequiresResponse = requiresResponse;
         Summary = summary.Trim();
+        SuggestedReplyDraft = requiresResponse && !string.IsNullOrWhiteSpace(suggestedReplyDraft)
+            ? suggestedReplyDraft.Trim()
+            : null;
         Deadline = deadline;
         NextReminderAt = requiresResponse
             ? nextReminderAt ?? CalculateDefaultReminder(priorityLevel, deadline)
@@ -49,7 +54,8 @@ public sealed class EmailAnalysis : Entity
         bool requiresResponse,
         string summary,
         DateTimeOffset? deadline = null,
-        DateTimeOffset? nextReminderAt = null)
+        DateTimeOffset? nextReminderAt = null,
+        string? suggestedReplyDraft = null)
     {
         return new EmailAnalysis(
             emailRecordId,
@@ -57,7 +63,8 @@ public sealed class EmailAnalysis : Entity
             requiresResponse,
             summary,
             deadline,
-            nextReminderAt);
+            nextReminderAt,
+            suggestedReplyDraft);
     }
 
     public void RescheduleReminder(DateTimeOffset newReminderAt)

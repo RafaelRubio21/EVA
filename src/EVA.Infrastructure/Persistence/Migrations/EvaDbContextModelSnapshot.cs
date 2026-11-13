@@ -42,6 +42,10 @@ namespace EVA.Infrastructure.Persistence.Migrations
                     b.Property<bool>("RequiresResponse")
                         .HasColumnType("bit");
 
+                    b.Property<string>("SuggestedReplyDraft")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
                     b.Property<string>("Summary")
                         .IsRequired()
                         .HasMaxLength(1500)

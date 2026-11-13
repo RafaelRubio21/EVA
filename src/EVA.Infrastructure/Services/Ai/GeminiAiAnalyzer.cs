@@ -40,7 +40,7 @@ public sealed class GeminiAiAnalyzer(
 
         var prompt = $$"""
             Você é a EVA (Entidade Virtual de Apoio), uma secretária executiva inteligente.
-            Analise o e-mail abaixo recebido em {{receivedAt:O}} e classifique a prioridade, se exige resposta, um resumo conciso em português, o prazo final (deadline) se houver e o horário sugerido para o primeiro lembrete.
+            Analise o e-mail abaixo recebido em {{receivedAt:O}} e classifique a prioridade, se exige resposta, um resumo conciso em português, o prazo final (deadline) se houver, o horário sugerido para o primeiro lembrete e, caso exija resposta, redija uma sugestão breve e cordial de rascunho de resposta em português (suggestedReplyDraft).
 
             Remetente: {{sender}}
             Assunto: {{subject}}
@@ -72,6 +72,7 @@ public sealed class GeminiAiAnalyzer(
                         },
                         requiresResponse = new { type = "BOOLEAN" },
                         summary = new { type = "STRING" },
+                        suggestedReplyDraft = new { type = "STRING", nullable = true },
                         deadline = new { type = "STRING", nullable = true },
                         suggestedReminderAt = new { type = "STRING", nullable = true }
                     },
@@ -115,7 +116,8 @@ public sealed class GeminiAiAnalyzer(
                 parsed.RequiresResponse,
                 parsed.Summary,
                 deadline,
-                reminder);
+                reminder,
+                parsed.SuggestedReplyDraft);
         }
         catch (Exception ex)
         {
@@ -133,6 +135,7 @@ public sealed class GeminiAiAnalyzer(
         string PriorityLevel,
         bool RequiresResponse,
         string Summary,
+        string? SuggestedReplyDraft,
         string? Deadline,
         string? SuggestedReminderAt);
 }

@@ -28,6 +28,7 @@ public sealed class GetEmailByIdQueryHandler(IEmailRepository emailRepository)
             email.Analysis?.PriorityLevel.ToString(),
             email.Analysis?.RequiresResponse,
             email.Analysis?.Summary,
+            email.Analysis?.SuggestedReplyDraft,
             email.Analysis?.Deadline,
             email.Analysis?.NextReminderAt);
     }

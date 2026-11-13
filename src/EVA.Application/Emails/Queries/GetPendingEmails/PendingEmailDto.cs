@@ -12,5 +12,6 @@ public sealed record PendingEmailDto(
     PriorityLevel PriorityLevel,
     string PriorityLabel,
     string Summary,
+    string? SuggestedReplyDraft,
     DateTimeOffset? Deadline,
     DateTimeOffset? NextReminderAt);
